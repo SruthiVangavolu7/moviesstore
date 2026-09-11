@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'moviesstore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'moviesstore',
+        'NAME': BASE_DIR / 'db.sqlite3',
         'USER': 'root',
         'PASSWORD': '',
         'HOST': 'localhost',
