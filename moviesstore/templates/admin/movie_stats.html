@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="module">
+  <table style="width: 100%;">
+    <thead>
+      <tr><th>Measure</th><th>Movie</th><th>Times</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Most purchased</td>
+        {% if most_purchased %}
+          <td>{{ most_purchased.name }}</td>
+          <td>{{ most_purchased.times_bought }} bought</td>
+        {% else %}
+          <td colspan="2">No purchases yet</td>
+        {% endif %}
+      </tr>
+      <tr>
+        <td>Most reviewed</td>
+        {% if most_reviewed %}
+          <td>{{ most_reviewed.name }}</td>
+          <td>{{ most_reviewed.times_reviewed }} reviews</td>
+        {% else %}
+          <td colspan="2">No reviews yet</td>
+        {% endif %}
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

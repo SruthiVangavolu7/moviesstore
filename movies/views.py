@@ -4,6 +4,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Movie, Review
 from django.contrib.auth.decorators import login_required
+from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Count, Sum
 
 
 def index(request):
@@ -72,3 +75,20 @@ def report_review(request, id, review_id):
     review.delete()
     return redirect('movies.show', id=id)
 
+@staff_member_required
+def admin_stats(request):
+    most_purchased = (Movie.objects
+        .annotate(times_bought=Sum('item__quantity'))
+        .filter(times_bought__gt=0)
+        .order_by('-times_bought')
+        .first())
+    most_reviewed = (Movie.objects
+        .annotate(times_reviewed=Count('review'))
+        .filter(times_reviewed__gt=0)
+        .order_by('-times_reviewed')
+        .first())
+    context = dict(admin.site.each_context(request),
+        title='Movie Stats',
+        most_purchased=most_purchased,
+        most_reviewed=most_reviewed)
+    return render(request, 'admin/movie_stats.html', context)
