@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2>Admin Dashboard</h2>
+    <p>Movie Purchase Statistics</p>
+
+    <hr>
+
+    <h3>Top Purchasing User</h3>
+
+    {% if template_data.top_buyer %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+
+                <h4>
+                    {{ template_data.top_buyer.username }}
+                </h4>
+
+                <p>
+                    Movies Purchased:
+                    <strong>
+                        {{ template_data.top_buyer.total_movies }}
+                    </strong>
+                </p>
+
+            </div>
+        </div>
+
+    {% else %}
+
+        <p>No movie purchases have been made yet.</p>
+
+    {% endif %}
+
+
+    <h3>All User Purchases</h3>
+
+    <table class="table table-striped">
+
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Movies Purchased</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for buyer in template_data.purchase_counts %}
+
+                <tr>
+                    <td>{{ buyer.username }}</td>
+                    <td>{{ buyer.total_movies }}</td>
+                </tr>
+
+            {% empty %}
+
+                <tr>
+                    <td colspan="2">
+                        No purchases found.
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock content %}
