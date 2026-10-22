@@ -8,6 +8,11 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, F
+from cart.models import Item
+
+
 @login_required
 def logout(request):
     auth_logout(request)
@@ -57,3 +62,33 @@ def orders(request):
     template_data['orders'] = request.user.order_set.all()
     return render(request, 'accounts/orders.html',
         {'template_data': template_data})
+
+
+@staff_member_required
+def admin_top_purchaser(request):
+    purchase_counts = ( 
+        Item.objects
+        .filter(order__user__is_staff= False)
+        .values(
+            username=F('order__user__username')
+        )
+        .annotate(
+            total_movies=Sum('quantity')
+        )
+        .order_by(
+            '-total_movies',
+            'username'
+        )
+    )
+
+    top_buyer= purchase_counts.first()
+    template_data = {}
+    template_data['title'] = 'Admin Dashboard'
+    template_data['top_buyer'] = top_buyer
+    template_data['purchase_counts'] = purchase_counts
+
+    return render(
+        request, 
+        'accounts/admin_top_purchaser.html',
+        {'template_data': template_data}
+    )

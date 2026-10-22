@@ -1,11 +1,41 @@
 {% extends "admin/index.html" %}
 
 {% block content %}
+
 <div class="module">
-  <table style="width: 100%;">
-    <caption><a class="section" href="{% url 'admin.movie_stats' %}">Movie Stats</a></caption>
-    <tr><th scope="row"><a href="{% url 'admin.movie_stats' %}">Most purchased &amp; most reviewed</a></th></tr>
-  </table>
+    <table style="width: 100%;">
+        <caption>
+            <a class="section" href="{% url 'admin.movie_stats' %}">
+                Movie Stats
+            </a>
+        </caption>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'admin.movie_stats' %}">
+                    Most purchased &amp; most reviewed
+                </a>
+            </th>
+        </tr>
+    </table>
 </div>
+
+<div class="module">
+    <table style="width: 100%;">
+        <caption>
+            <a class="section" href="{% url 'accounts.admin_top_purchaser' %}">
+                User Stats
+            </a>
+        </caption>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'accounts.admin_top_purchaser' %}">
+                    Top purchasing user
+                </a>
+            </th>
+        </tr>
+    </table>
+</div>
+
 {{ block.super }}
+
 {% endblock %}
