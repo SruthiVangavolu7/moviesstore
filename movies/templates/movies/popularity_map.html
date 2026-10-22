@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  #pop-map { height: 480px; border-radius: 12px; z-index: 0; }
+  .region-btn.active { background: #212529; color: #fff; }
+  .pop-label { background: #212529; color: #fff; border: 0; border-radius: 999px; padding: 2px 10px; font-weight: 600; }
+  .pop-label::before { display: none; }
+</style>
+
+<div class="p-3">
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col mx-auto mb-3">
+        <h2>Local Popularity Map</h2>
+        <p class="text-muted mb-0">See which movies are trending (most purchased) in each region. Click a region to see its top movies.</p>
+        <hr />
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div id="pop-map"></div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          {% for r in template_data.regions %}
+            <a href="?region={{ r.key }}" class="btn btn-outline-dark btn-sm region-btn {% if template_data.selected.key == r.key %}active{% endif %}">
+              {{ r.name }} <span class="badge bg-secondary ms-1">{{ r.total }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        {% if template_data.selected %}
+          {% with r=template_data.selected %}
+          <div class="card mb-3">
+            <div class="card-header"><b>Trending in the {{ r.name }}</b></div>
+            <div class="card-body">
+              <p class="text-muted small mb-2">{{ r.states }} &middot; {{ r.total }} movie{{ r.total|pluralize }} purchased</p>
+              {% if r.top %}
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>#</th><th>Movie</th><th class="text-end">Purchased</th></tr></thead>
+                  <tbody>
+                    {% for m in r.top %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><a class="link-dark" href="{% url 'movies.show' id=m.movie__id %}">{{ m.movie__name }}</a></td>
+                        <td class="text-end">{{ m.count }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p class="mb-0">No purchases in this region yet.</p>
+              {% endif %}
+            </div>
+          </div>
+          {% endwith %}
+        {% else %}
+          <div class="card mb-3"><div class="card-body">Select a region on the map or below to see its top trending movies.</div></div>
+        {% endif %}
+
+        <div class="card">
+          <div class="card-header"><b>Your recent purchases</b></div>
+          <div class="card-body">
+            {% if template_data.my_items %}
+              <ul class="list-unstyled mb-0">
+                {% for item in template_data.my_items %}
+                  <li class="d-flex justify-content-between border-bottom py-1">
+                    <span>{{ item.movie.name }} &times;{{ item.quantity }}</span>
+                    <span class="text-muted small">{{ item.order.get_region_display|default:"No region" }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="mb-0">You haven't bought anything yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ template_data.map_points|json_script:"pop-points" }}
+<script>
+(function () {
+  var points = JSON.parse(document.getElementById("pop-points").textContent);
+  var map = L.map("pop-map").setView([38.5, -96], 4);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+  var max = Math.max(1, ...points.map(function (p) { return p.total; }));
+  points.forEach(function (p) {
+    var circle = L.circleMarker([p.lat, p.lng], {
+      radius: 14 + 26 * (p.total / max),
+      color: "#212529", weight: 2,
+      fillColor: p.total ? "#dc3545" : "#adb5bd", fillOpacity: 0.55
+    }).addTo(map);
+    circle.bindTooltip(p.name + " (" + p.total + ")", { permanent: true, direction: "top", className: "pop-label" });
+    var box = document.createElement("div");
+    var title = document.createElement("b"); title.textContent = p.name; box.appendChild(title);
+    var line = document.createElement("div");
+    line.textContent = p.top ? "Trending: " + p.top : "No purchases yet";
+    box.appendChild(line);
+    var link = document.createElement("a");
+    link.href = "?region=" + p.key; link.textContent = "See top movies";
+    box.appendChild(link);
+    circle.bindPopup(box);
+    circle.on("dblclick", function () { window.location = "?region=" + p.key; });
+  });
+})();
+</script>
+{% endblock content %}
