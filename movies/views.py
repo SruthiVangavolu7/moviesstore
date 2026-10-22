@@ -2,11 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 # Create your views here.
 
-from .models import Movie, Review
+from .models import Movie, Review, Rating
 from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Count, Sum
+from django.db.models import Avg, Count, Sum
 
 
 def index(request):
@@ -21,13 +21,52 @@ def index(request):
     return render(request, 'movies/index.html', {'template_data': template_data})
 
 def show(request, id):
-    movie = Movie.objects.get(id=id)
+    movie = get_object_or_404(Movie, id=id)
     reviews = Review.objects.filter(movie=movie)
+
+    rating_stats = movie.ratings.aggregate(
+        average=Avg('value'),
+        count=Count('id')
+    )
+
+    user_rating = None
+    if request.user.is_authenticated:
+        user_rating = (
+            Rating.objects
+            .filter(movie=movie, user=request.user)
+            .values_list('value', flat=True)
+            .first()
+        )
+
     template_data = {}
     template_data['title'] = movie.name
     template_data['movie'] = movie
     template_data['reviews'] = reviews
+    template_data['average_rating'] = rating_stats['average']
+    template_data['rating_count'] = rating_stats['count']
+    template_data['user_rating'] = user_rating
+
     return render(request, 'movies/show.html', {'template_data': template_data})
+
+
+@login_required
+def rate_movie(request, id):
+    movie = get_object_or_404(Movie, id=id)
+
+    if request.method == 'POST':
+        try:
+            value = int(request.POST.get('rating', ''))
+        except (TypeError, ValueError):
+            value = 0
+
+        if 1 <= value <= 5:
+            Rating.objects.update_or_create(
+                movie=movie,
+                user=request.user,
+                defaults={'value': value}
+            )
+
+    return redirect('movies.show', id=id)
 
 
 @login_required
