@@ -6,6 +6,7 @@ from movies.models import Movie
 from .utils import calculate_cart_total
 
 from .models import Order, Item
+from .regions import REGIONS, REGIONS_BY_KEY
 from django.contrib.auth.decorators import login_required
 
 def index(request):
@@ -20,6 +21,8 @@ def index(request):
     template_data['title'] = 'Cart'
     template_data['movies_in_cart'] = movies_in_cart
     template_data['cart_total'] = cart_total
+    template_data['regions'] = REGIONS
+    template_data['selected_region'] = request.session.get('region', '')
     return render(request, 'cart/index.html',
         {'template_data': template_data})
 
@@ -40,11 +43,16 @@ def purchase(request):
     movie_ids = list(cart.keys())
     if (movie_ids == []):
         return redirect('cart.index')
+    region = request.POST.get('region', '')
+    if region not in REGIONS_BY_KEY:
+        return redirect('cart.index')
+    request.session['region'] = region
     movies_in_cart = Movie.objects.filter(id__in=movie_ids)
     cart_total = calculate_cart_total(cart, movies_in_cart)
     order = Order()
     order.user = request.user
     order.total = cart_total
+    order.region = region
     order.save()
     for movie in movies_in_cart:
         item = Item()
@@ -59,5 +67,3 @@ def purchase(request):
     template_data['order_id'] = order.id
     return render(request, 'cart/purchase.html',
         {'template_data': template_data})
-
-

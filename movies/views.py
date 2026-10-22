@@ -7,6 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Avg, Count, Sum
+from cart.models import Item
+from cart.regions import REGIONS, REGIONS_BY_KEY
 
 
 def index(request):
@@ -131,3 +133,38 @@ def admin_stats(request):
         most_purchased=most_purchased,
         most_reviewed=most_reviewed)
     return render(request, 'admin/movie_stats.html', context)
+
+
+@login_required
+def popularity_map(request):
+    """User story 1: trending (most purchased) movies in each region."""
+    regions = []
+    for region in REGIONS:
+        top = list(
+            Item.objects.filter(order__region=region["key"])
+            .values("movie__id", "movie__name")
+            .annotate(count=Sum("quantity"))
+            .order_by("-count", "movie__name")[:5]
+        )
+        total = Item.objects.filter(order__region=region["key"]).aggregate(n=Sum("quantity"))["n"] or 0
+        regions.append({**region, "top": top, "total": total})
+
+    selected_key = request.GET.get("region", "")
+    selected = next((r for r in regions if r["key"] == selected_key), None)
+
+    my_items = (Item.objects.filter(order__user=request.user)
+                .select_related("movie", "order")
+                .order_by("-order__date")[:10])
+
+    template_data = {
+        "title": "Local Popularity Map",
+        "regions": regions,
+        "selected": selected,
+        "my_items": my_items,
+        "map_points": [
+            {"key": r["key"], "name": r["name"], "lat": r["lat"], "lng": r["lng"],
+             "total": r["total"], "top": r["top"][0]["movie__name"] if r["top"] else None}
+            for r in regions
+        ],
+    }
+    return render(request, "movies/popularity_map.html", {"template_data": template_data})
