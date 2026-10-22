@@ -88,7 +88,7 @@
 (function () {
   var points = JSON.parse(document.getElementById("pop-points").textContent);
   var map = L.map("pop-map").setView([38.5, -96], 4);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
   var max = Math.max(1, ...points.map(function (p) { return p.total; }));

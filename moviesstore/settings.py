@@ -139,3 +139,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 
+
+# Django defaults to "same-origin", which sends no Referer to other sites.
+# OpenStreetMap's tile servers block map tiles without one, so send just our origin.
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
